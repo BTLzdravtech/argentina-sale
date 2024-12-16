@@ -13,7 +13,7 @@
         </t>
     </template>
 
-    <!-- we force priority greater than 16 so that it dont break inheritance of report_saleorder_document_inherit_sale_stock. with this we are loosing the incoterm field added but that sale_stock view -->
+    <!-- we force priority greater than 16 so that it dont break inheritance of report_saleorder_document_inherit_sale_stock. with this we are losing the incoterm field added but that sale_stock view -->
     <template id="report_saleorder_document" priority="20" inherit_id="sale.report_saleorder_document" primary="True">
 
         <!-- custom header and footer -->
