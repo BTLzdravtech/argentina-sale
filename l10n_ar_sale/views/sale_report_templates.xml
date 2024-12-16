@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- TODO: Odoo BTL - stopkovae - cause problem in our code - Element '<xpath expr="//t[@t-call=&#39;sale.report_saleorder_document&#39;]">' cannot be located in parent view -->
+    <!-- TODO: Odoo BTL - stopkovae - these views cause problem in our code - Element '<xpath expr="//t[@t-call=&#39;sale.report_saleorder_document&#39;]">' cannot be located in parent view -->
     <!--<template id="report_saleorder_raw" inherit_id="sale.report_saleorder_raw">
         <t t-call="sale.report_saleorder_document" position="attributes">
             <attribute name="t-call">#{ doc._get_name_sale_report('sale.report_saleorder_document') }</attribute>
         </t>
-    </template>-->
+    </template>
 
     <!-- TODO: Odoo BTL - stopkovae - cause problem in our code - Element '<xpath expr="//t[@t-call=&#39;sale.report_saleorder_document&#39;]">' cannot be located in parent view -->
     <!--<template id="report_saleorder_pro_forma" inherit_id="sale.report_saleorder_pro_forma">
@@ -16,7 +16,7 @@
     </template>-->
 
     <!-- we force priority greater than 16 so that it dont break inheritance of report_saleorder_document_inherit_sale_stock. with this we are loosing the incoterm field added but that sale_stock view -->
-    <!-- TODO: Odoo BTL - stopkovae - cause problem in our code - Element '<xpath expr="//t[@t-call=&#39;sale.report_saleorder_document&#39;]">' cannot be located in parent view -->
+    <!-- TODO: Odoo BTL - stopkovae - this view causes problem in our code - Element '<xpath expr="//t[@t-call=&#39;sale.report_saleorder_document&#39;]">' cannot be located in parent view -->
 <!--    <template id="report_saleorder_document" priority="20" inherit_id="sale.report_saleorder_document" primary="True">-->
 
 <!--        &lt;!&ndash; custom header and footer &ndash;&gt;-->
