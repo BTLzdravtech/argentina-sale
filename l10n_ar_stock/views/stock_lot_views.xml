@@ -12,17 +12,16 @@
         </field>
     </record>
 
-    <!-- TODO: Odoo BTL - stopkovae - these views cause warning in our code - Field "dispatch_number" does not exist in model "stock.lot" -->
-<!--    <record id="view_production_lot_tree" model="ir.ui.view">-->
-<!--        <field name="name">stock.production.lot.tree</field>-->
-<!--        <field name="model">stock.lot</field>-->
-<!--        <field name="inherit_id" ref="stock.view_production_lot_tree"/>-->
-<!--        <field name="arch" type="xml">-->
-<!--            <field name="ref" position="after">-->
-<!--                <field name="dispatch_number"/>-->
-<!--            </field>-->
-<!--        </field>-->
-<!--    </record>-->
+    <record id="view_production_lot_tree" model="ir.ui.view">
+        <field name="name">stock.production.lot.tree</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="stock.view_production_lot_tree"/>
+        <field name="arch" type="xml">
+            <field name="ref" position="after">
+                <field name="dispatch_number"/>
+            </field>
+        </field>
+    </record>
 
     <record id="search_product_lot_filter" model="ir.ui.view">
         <field name="name">stock.lot.filter</field>
