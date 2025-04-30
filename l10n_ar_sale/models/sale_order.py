@@ -105,6 +105,7 @@ class SaleOrder(models.Model):
         return super().write(vals)
 
     def _compute_tax_totals(self):
+        # TODO vk: lock for arg
         """ Mandamos en contexto el invoice_date para calculo de impuesto con partner aliquot
         ver módulo l10n_ar_account_withholding. """
         for rec in self:
