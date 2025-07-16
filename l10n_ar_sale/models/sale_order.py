@@ -167,3 +167,11 @@ class SaleOrder(models.Model):
             ('state', '=', 'installed'),
         ])
         return True if module_installed else False
+
+
+
+    # @api.model
+    # def get_view(self, view_id=None, view_type="form", **options):
+    #     if view_type == "form" and self.env.company.country_code == "AR":
+    #         view_id = self.env.ref("account_background_post.validate_account_move_view_ar").id
+    #     return super().get_view(view_id=view_id, view_type=view_type, **options)

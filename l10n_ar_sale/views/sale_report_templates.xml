@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!--                # TODO vk: lock only for arg -->
+    <!--                # DONETODO vk: lock only for arg -->
 
     <template id="report_saleorder_raw" inherit_id="sale.report_saleorder_raw">
         <t t-call="sale.report_saleorder_document" position="attributes">
             <attribute name="t-call">#{ doc._get_name_sale_report('sale.report_saleorder_document') }</attribute>
+<!--            in python, _get_name_sale_report calls the l10n_ar_sale version only for AR company's-->
         </t>
     </template>
 
    <template id="report_saleorder_pro_forma" inherit_id="sale.report_saleorder_pro_forma">
         <t t-call="sale.report_saleorder_document" position="attributes">
             <attribute name="t-call">#{ doc._get_name_sale_report('sale.report_saleorder_document') }</attribute>
+            <!--            in python, _get_name_sale_report calls the l10n_ar_sale version only for AR company's-->
         </t>
     </template>
 
