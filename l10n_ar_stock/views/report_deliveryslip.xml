@@ -104,8 +104,10 @@
         <attribute name="t-value">False</attribute>
     </t>
 
-    <!-- remove default document title -->
-    <h2 position="replace"/>
+    <!-- make default document title invisible (locked for AR company) -->
+    <h2 position="attributes">
+        <attribute name="invisible">company_id.country_id.code == 'AR'</attribute>
+    </h2>
 
     <!-- We want to hide order number and shipping address show at to left side of the report -->
     <xpath expr="//div[@name='div_origin']/.." position="attributes">
