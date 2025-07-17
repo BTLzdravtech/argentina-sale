@@ -10,13 +10,13 @@
     </template>
 
     <!-- we would do something like this if we want it multilocalization compatible as in l10n_latam_invoice_document -->
-    <!-- <template id="report_saleorder" inherit_id="sale.report_saleorder">
+    <template id="report_saleorder" inherit_id="sale.report_saleorder">
         <t t-call="sale.report_saleorder_document" position="attributes">
             <attribute name="t-call">#{ o.get_custom_report('sale.report_saleorder_document') }</attribute>
         </t>
     </template>
 
-    <template id="report_saleorder_pro_forma" inherit_id="sale.report_saleorder_pro_forma">
+    <!-- <template id="report_saleorder_pro_forma" inherit_id="sale.report_saleorder_pro_forma">
         <t t-call="sale.report_saleorder_document" position="attributes">
             <attribute name="t-call">#{ o.get_custom_report('sale.report_saleorder_document') }</attribute>
         </t>
