@@ -17,6 +17,7 @@
         </t>
     </template>
 
+    <!-- TODO: Odoo BTL - stopkovae - conflict 2 - Element '<t t-call="sale.report_saleorder_document">' cannot be located in parent view-->
     <template id="report_saleorder_pro_forma" inherit_id="sale.report_saleorder_pro_forma">
         <t t-call="sale.report_saleorder_document" position="attributes">
             <attribute name="t-call">#{ o.get_custom_report('sale.report_saleorder_document') }</attribute>
