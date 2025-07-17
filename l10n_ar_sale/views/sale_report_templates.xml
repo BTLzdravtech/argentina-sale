@@ -51,7 +51,10 @@
         <t t-set="address" position="replace"/>
 
         <!-- remove default document title -->
-        <h2 position="replace"/>
+<!--        <h2 position="replace"/>-->
+        <h2 position="attributes">
+            <attribute name="invisible">company_id.country_id.code == 'AR'</attribute>
+        </h2>
 
 
         <xpath expr="//span[@t-field='line.price_unit']" position="attributes">
