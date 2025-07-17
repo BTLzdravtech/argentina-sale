@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- TODO: Odoo BTL - stopkovae - these views cause problem in our code - ValueError: External ID not found in the system: l10n_ar_stock.report_delivery_document -->
     <template id="report_delivery_document" inherit_id="l10n_ar_stock.report_delivery_document">
 
         <t t-if="o.number_of_packages" position="after">
