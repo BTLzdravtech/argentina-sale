@@ -10,8 +10,8 @@
     </template>
 
     <!-- we would do something like this if we want it multilocalization compatible as in l10n_latam_invoice_document -->
-    <!-- TODO: Odoo BTL - stopkovae - these views cause problem in our code - Element '<t t-call="sale.report_saleorder_document">' cannot be located in parent view-->
-    <template id="report_saleorder" inherit_id="sale.report_saleorder">
+    <!-- TODO: Odoo BTL - stopkovae - conflict 1 - Element '<t t-call="sale.report_saleorder_document">' cannot be located in parent view-->
+    <template id="report_saleorder" inherit_id="sale.report_saleorder_raw">
         <t t-call="sale.report_saleorder_document" position="attributes">
             <attribute name="t-call">#{ o.get_custom_report('sale.report_saleorder_document') }</attribute>
         </t>
