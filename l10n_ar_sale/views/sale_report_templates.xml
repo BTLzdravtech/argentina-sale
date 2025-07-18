@@ -2,12 +2,14 @@
 <odoo>
     <!--                # TODO vk: lock only for arg -->
 
+    <!-- TODO: Odoo BTL - stopkovae - conflict 1 - Element '<t t-call="sale.report_saleorder_document">' cannot be located in parent view-->
     <template id="report_saleorder_raw" inherit_id="sale.report_saleorder_raw">
         <t t-call="sale.report_saleorder_document" position="attributes">
             <attribute name="t-call">#{ doc._get_name_sale_report('sale.report_saleorder_document') }</attribute>
         </t>
     </template>
 
+    <!-- TODO: Odoo BTL - stopkovae - conflict 2 - Element '<t t-call="sale.report_saleorder_document">' cannot be located in parent view-->
    <template id="report_saleorder_pro_forma" inherit_id="sale.report_saleorder_pro_forma">
         <t t-call="sale.report_saleorder_document" position="attributes">
             <attribute name="t-call">#{ doc._get_name_sale_report('sale.report_saleorder_document') }</attribute>
