@@ -105,7 +105,6 @@ class SaleOrder(models.Model):
         return super().write(vals)
 
     def _compute_tax_totals(self):
-        # DONETODO vk: lock for arg
         if self.company_id.country_id == self.env.ref('base.ar'):
             """ Mandamos en contexto el invoice_date para calculo de impuesto con partner aliquot
             ver módulo l10n_ar_account_withholding. """
