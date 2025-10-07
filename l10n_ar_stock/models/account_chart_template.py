@@ -2,17 +2,16 @@
 # For copyright and license notices, see __manifest__.py file in module root
 # directory
 ##############################################################################
-from odoo import models, api
-from odoo.addons.account.models.chart_template import template
+from odoo import api, models
 
 
 class AccountChartTemplate(models.AbstractModel):
-    _inherit = 'account.chart.template'
+    _inherit = "account.chart.template"
 
-    def _load(self, template_code, company, install_demo):
-        if company.country_id == self.env.ref('base.ar'):
+    def _load(self, template_code, company, install_demo, force_create=True):
+        if template_code in ("ar_base", "ar_ex", "ar_ri"):
             self.generate_stock_book(company)
-        return super(AccountChartTemplate, self)._load(template_code, company, install_demo)
+        return super(AccountChartTemplate, self)._load(template_code, company, install_demo, force_create)
 
     @api.model
     def generate_stock_book(self, company):
@@ -26,29 +25,34 @@ class AccountChartTemplate(models.AbstractModel):
         This method used for checking new book already created or not.
         If not then create new book.
         """
-        book = self.env['stock.book'].search([
-            ('name', '=', book_vals['name']),
-            ('company_id', '=', company.id)])
+        book = self.env["stock.book"].search([("name", "=", book_vals["name"]), ("company_id", "=", company.id)])
         if not book:
             book.sudo().create(book_vals)
         return True
 
     @api.model
     def _prepare_all_book_data(self, company):
-        name = 'Talonario (%s)' % (company.name)
-        sequence_id = self.env['ir.sequence'].sudo().create({
-            'name': name,
-            'code': 'stock.voucher',
-            'implementation': 'no_gap',
-            'prefix': '000X-',
-            'padding': 8,
-            'number_increment': 1,
-            'company_id': company.id,
-        }).id
+        name = "Talonario (%s)" % (company.name)
+        sequence_id = (
+            self.env["ir.sequence"]
+            .sudo()
+            .create(
+                {
+                    "name": name,
+                    "code": "stock.voucher",
+                    "implementation": "no_gap",
+                    "prefix": "000X-",
+                    "padding": 8,
+                    "number_increment": 1,
+                    "company_id": company.id,
+                }
+            )
+            .id
+        )
         vals = {
-            'name': name,
-            'sequence_id': sequence_id,
-            'lines_per_voucher': 0,
-            'company_id': company.id,
+            "name": name,
+            "sequence_id": sequence_id,
+            "lines_per_voucher": 0,
+            "company_id": company.id,
         }
         return vals

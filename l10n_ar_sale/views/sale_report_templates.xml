@@ -31,7 +31,7 @@
             <t t-if="env.context.get('proforma', False) or is_pro_forma">
                 <t t-set="report_name">Pro-Forma Invoice</t>
             </t>
-            <t t-set="header_address" t-value="doc.sale_checkbook_id.report_partner_id or doc.company_id.partner_id"/>
+            <t t-set="header_address" t-value="doc.company_id.partner_id"/>
 
             <t t-set="custom_footer">
                 <div class="row">
@@ -53,7 +53,9 @@
         <t t-set="layout_document_title" position="replace"/>
 
         <xpath expr="//span[@t-field='line.price_unit']" position="attributes">
-            <attribute name="t-field">line.report_price_unit</attribute>
+            <attribute name="t-field"></attribute>
+            <attribute name="t-out">line.report_price_unit</attribute>
+            <attribute name="t-options">{"widget": "float", "display_currency": doc.currency_id, "decimal_precision": "Product Price"}</attribute>
         </xpath>
 
         <t t-set="taxes" position="attributes">
@@ -76,14 +78,18 @@
         <td name="td_taxes" position="attributes">
             <attribute name="t-if">doc.vat_discriminated</attribute>
         </td>
+        <t t-set="taxes" position="attributes">
+            <attribute name="t-value">', '.join([(tax.invoice_label or tax.name) for tax in line.tax_id.filtered(lambda x: x.tax_group_id.l10n_ar_vat_afip_code)])</attribute>
+        </t>
+
         <!-- We change the name of the column depending on the tax discrimination -->
         <th name="th_subtotal" class="text-end" position="replace">
-            <td t-if="doc.vat_discriminated" class="text-end" >
+            <th t-if="doc.vat_discriminated" class="text-end" >
                 <span>SubTotal</span>
-            </td>
-            <td t-else="" class="text-end">
+            </th>
+            <th t-else="" class="text-end">
                 <span>Total</span>
-            </td>
+            </th>
         </th>
 
         <div id="informations" position="replace">
@@ -120,7 +126,7 @@
                         <span t-field="doc.validity_date"/>
                     </t>
 
-                    <t groups="l10n_ar_sale.group_delivery_date_on_report_online">
+                    <t groups="sale_ux.group_delivery_date_on_report_online">
                         <br/><strong>Delivery Date: </strong>
                         <span t-out="doc.commitment_date or doc.date_order" t-options='{"widget": "date"}'/>
                     </t>
@@ -134,8 +140,9 @@
                         <span t-field="doc.client_order_ref"/>
                     </t>
 
-                    <t t-if="doc.is_module_installed('sale_stock')">
-                        <br/><strong>Incoterm:</strong><span t-field="doc.incoterm.name"/>
+                    <t t-if="doc.is_module_installed('sale_stock') and doc.incoterm" name="incoterm">
+                        <br/><strong>Incoterm:</strong>
+                        <span t-field="doc.incoterm.code"/><span t-if="doc.incoterm_location" t-out="' - %s' % doc.incoterm_location"/>
                     </t>
 
                 </div>
