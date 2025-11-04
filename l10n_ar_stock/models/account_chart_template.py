@@ -9,9 +9,12 @@ class AccountChartTemplate(models.AbstractModel):
     _inherit = "account.chart.template"
 
     def _load(self, template_code, company, install_demo, force_create=True):
-        if template_code in ("ar_base", "ar_ex", "ar_ri"):
-            self.generate_stock_book(company)
-        return super(AccountChartTemplate, self)._load(template_code, company, install_demo, force_create)
+        if self.env.company.country_code == 'AR':   # maybe this isn't necessary
+            if template_code in ("ar_base", "ar_ex", "ar_ri"):
+                self.generate_stock_book(company)
+            return super(AccountChartTemplate, self)._load(template_code, company, install_demo, force_create)
+        else:
+            return super(AccountChartTemplate, self)._load(template_code, company, install_demo, force_create)
 
     @api.model
     def generate_stock_book(self, company):
