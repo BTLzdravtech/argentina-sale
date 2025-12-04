@@ -34,6 +34,7 @@
         "demo/stock_picking_demo.xml",
     ],
     "installable": True,
+    # TODO: Odoo BTL - not sure if we want that
     "auto_install": ["stock", "l10n_ar"],
     "application": False,
 }
