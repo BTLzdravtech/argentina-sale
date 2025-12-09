@@ -39,6 +39,7 @@ class SaleOrderLine(models.Model):
 
     @api.depends("price_unit", "price_subtotal", "order_id.vat_discriminated")
     def _compute_report_price_reduce(self):
+        # TODO: Odoo BTL - needs to be locked on AR company
         for line in self:
             price_type = line.price_subtotal if line.order_id.vat_discriminated else line.price_total
             line.report_price_reduce = price_type / line.product_uom_qty if line.product_uom_qty else 0.0
@@ -55,6 +56,7 @@ class SaleOrderLine(models.Model):
 
     @api.depends("price_unit", "price_subtotal", "order_id.vat_discriminated")
     def _compute_report_prices_and_taxes(self):
+        # TODO: Odoo BTL - needs to be locked on AR company
         for line in self:
             order = line.order_id
             taxes_included = not order.vat_discriminated

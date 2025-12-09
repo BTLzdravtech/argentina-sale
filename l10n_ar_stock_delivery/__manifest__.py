@@ -15,6 +15,7 @@
     ],
     "demo": [],
     "installable": True,
+    # TODO: Odoo BTL - auto_install must be False
     "auto_install": True,
     "application": False,
 }

@@ -76,6 +76,7 @@ class SaleOrder(models.Model):
         to_fix = invoices.filtered(lambda x: x.l10n_latam_use_documents and not x.l10n_latam_document_type_id)
         to_fix._compute_l10n_latam_available_document_types()
         if self.is_module_installed("sale_subscription_ux"):
+            # TODO: Odoo BTL - needs to be locked on AR company
             for invoice in invoices:
                 so = invoice.invoice_line_ids[0].sale_line_ids.order_id or False
                 if so and so.plan_id.bill_end_period:
@@ -102,6 +103,7 @@ class SaleOrder(models.Model):
         impuestos de la posicion fiscal, buscamos si hay impuestos existentes para los tax groups involucrados y los
         reemplazamos por los nuevos impuestos.
         """
+        # TODO: Odoo BTL - needs to be locked on AR company
         for rec in self.filtered(
             lambda x: x.fiscal_position_id.l10n_ar_tax_ids.filtered(lambda x: x.tax_type == "perception")
             and x.state not in ["cancel", "sale"]
