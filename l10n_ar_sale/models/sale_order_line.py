@@ -39,10 +39,10 @@ class SaleOrderLine(models.Model):
 
     @api.depends("price_unit", "price_subtotal", "order_id.vat_discriminated")
     def _compute_report_price_reduce(self):
-        # TODO: Odoo BTL - needs to be locked on AR company
-        for line in self:
-            price_type = line.price_subtotal if line.order_id.vat_discriminated else line.price_total
-            line.report_price_reduce = price_type / line.product_uom_qty if line.product_uom_qty else 0.0
+        if self.env.company.country_code == 'AR':
+            for line in self:
+                price_type = line.price_subtotal if line.order_id.vat_discriminated else line.price_total
+                line.report_price_reduce = price_type / line.product_uom_qty if line.product_uom_qty else 0.0
 
     @api.depends(
         "tax_id.tax_group_id.l10n_ar_vat_afip_code",
@@ -56,43 +56,50 @@ class SaleOrderLine(models.Model):
 
     @api.depends("price_unit", "price_subtotal", "order_id.vat_discriminated")
     def _compute_report_prices_and_taxes(self):
-        # TODO: Odoo BTL - needs to be locked on AR company
-        for line in self:
-            order = line.order_id
-            taxes_included = not order.vat_discriminated
-            price_digits = 10 ** self.env["decimal.precision"].precision_get("Product Price")
-            price_unit = line.tax_id.compute_all(
-                line.price_unit * price_digits, order.currency_id, 1.0, line.product_id, order.partner_shipping_id
-            )
-            if not taxes_included:
-                report_price_unit = price_unit["total_excluded"] / price_digits
-                report_price_subtotal = line.price_subtotal
-                not_included_taxes = line.tax_id
-                report_price_net = report_price_unit * (1 - (line.discount or 0.0) / 100.0)
-            else:
-                included_taxes = line.tax_id.filtered(lambda x: x.tax_group_id.l10n_ar_vat_afip_code)
-                not_included_taxes = line.tax_id - included_taxes
-                report_price_unit = (
-                    included_taxes.compute_all(
-                        line.price_unit * price_digits,
-                        order.currency_id,
-                        1.0,
-                        line.product_id,
-                        order.partner_shipping_id,
-                    )["total_included"]
-                    / price_digits
+        if self.env.company.country_code == 'AR':
+            for line in self:
+                order = line.order_id
+                taxes_included = not order.vat_discriminated
+                price_digits = 10 ** self.env["decimal.precision"].precision_get("Product Price")
+                price_unit = line.tax_id.compute_all(
+                    line.price_unit * price_digits, order.currency_id, 1.0, line.product_id, order.partner_shipping_id
                 )
-                report_price_net = report_price_unit * (1 - (line.discount or 0.0) / 100.0)
-                price = line.price_unit * (1 - (line.discount or 0.0) / 100.0)
-                report_price_subtotal = included_taxes.compute_all(
-                    price, order.currency_id, line.product_uom_qty, line.product_id, order.partner_shipping_id
-                )["total_included"]
+                if not taxes_included:
+                    report_price_unit = price_unit["total_excluded"] / price_digits
+                    report_price_subtotal = line.price_subtotal
+                    not_included_taxes = line.tax_id
+                    report_price_net = report_price_unit * (1 - (line.discount or 0.0) / 100.0)
+                else:
+                    included_taxes = line.tax_id.filtered(lambda x: x.tax_group_id.l10n_ar_vat_afip_code)
+                    not_included_taxes = line.tax_id - included_taxes
+                    report_price_unit = (
+                        included_taxes.compute_all(
+                            line.price_unit * price_digits,
+                            order.currency_id,
+                            1.0,
+                            line.product_id,
+                            order.partner_shipping_id,
+                        )["total_included"]
+                        / price_digits
+                    )
+                    report_price_net = report_price_unit * (1 - (line.discount or 0.0) / 100.0)
+                    price = line.price_unit * (1 - (line.discount or 0.0) / 100.0)
+                    report_price_subtotal = included_taxes.compute_all(
+                        price, order.currency_id, line.product_uom_qty, line.product_id, order.partner_shipping_id
+                    )["total_included"]
 
-            line.price_unit_with_tax = price_unit["total_included"] / price_digits
-            line.report_price_subtotal = report_price_subtotal
-            line.report_price_unit = report_price_unit
-            line.report_price_net = report_price_net
-            line.report_tax_id = not_included_taxes
+                line.price_unit_with_tax = price_unit["total_included"] / price_digits
+                line.report_price_subtotal = report_price_subtotal
+                line.report_price_unit = report_price_unit
+                line.report_price_net = report_price_net
+                line.report_tax_id = not_included_taxes
+        else:
+            for line in self:
+                line.price_unit_with_tax = 0
+                line.report_price_subtotal = 0
+                line.report_price_unit = 0
+                line.report_price_net = 0
+                line.report_tax_id = 0
 
     @api.model_create_multi
     def create(self, vals):
