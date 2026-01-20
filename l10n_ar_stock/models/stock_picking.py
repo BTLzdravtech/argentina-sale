@@ -440,10 +440,10 @@ class StockPicking(models.Model):
             return True
 
     def _action_done(self):
-        # TODO: Odoo BTL - needs to be locked on AR company
         res = super()._action_done()
-        for rec in self.filtered(lambda x: x.picking_type_code == "incoming" and x.dispatch_number):
-            rec.move_line_ids.filtered(lambda l: l.lot_id and not l.lot_id.dispatch_number).mapped("lot_id").write(
-                {"dispatch_number": rec.dispatch_number}
-            )
+        if self.env.company.country_code == 'AR':
+            for rec in self.filtered(lambda x: x.picking_type_code == "incoming" and x.dispatch_number):
+                rec.move_line_ids.filtered(lambda l: l.lot_id and not l.lot_id.dispatch_number).mapped("lot_id").write(
+                    {"dispatch_number": rec.dispatch_number}
+                )
         return res
