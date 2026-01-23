@@ -72,19 +72,19 @@ class SaleOrder(models.Model):
         computarlo y asignarlo, esto aplica para cuando generamos una factura desde una orden de venta o suscripcion"""
         invoices = super()._create_invoices(grouped=grouped, final=final, date=date)
 
-        # Intentamos Completar el dato tipo de documento si no seteado
-        to_fix = invoices.filtered(lambda x: x.l10n_latam_use_documents and not x.l10n_latam_document_type_id)
-        to_fix._compute_l10n_latam_available_document_types()
-        if self.is_module_installed("sale_subscription_ux"):
-            for invoice in invoices:
-                so = invoice.invoice_line_ids[0].sale_line_ids.order_id or False
-                if so and so.plan_id.bill_end_period:
-                    new_period_start, new_period_stop, ratio, number_of_days = so.order_line[
-                        0
-                    ]._get_invoice_line_parameters()
-                    invoice.l10n_ar_afip_service_start = new_period_start - so.plan_id.billing_period
-                    invoice.l10n_ar_afip_service_end = new_period_stop - so.plan_id.billing_period
-
+        if self.env.company.country_code == 'AR':
+            # Intentamos Completar el dato tipo de documento si no seteado
+            to_fix = invoices.filtered(lambda x: x.l10n_latam_use_documents and not x.l10n_latam_document_type_id)
+            to_fix._compute_l10n_latam_available_document_types()
+            if self.is_module_installed("sale_subscription_ux"):
+                for invoice in invoices:
+                    so = invoice.invoice_line_ids[0].sale_line_ids.order_id or False
+                    if so and so.plan_id.bill_end_period:
+                        new_period_start, new_period_stop, ratio, number_of_days = so.order_line[
+                            0
+                        ]._get_invoice_line_parameters()
+                        invoice.l10n_ar_afip_service_start = new_period_start - so.plan_id.billing_period
+                        invoice.l10n_ar_afip_service_end = new_period_stop - so.plan_id.billing_period
         return invoices
 
     def is_module_installed(self, module):
@@ -102,21 +102,22 @@ class SaleOrder(models.Model):
         impuestos de la posicion fiscal, buscamos si hay impuestos existentes para los tax groups involucrados y los
         reemplazamos por los nuevos impuestos.
         """
-        for rec in self.filtered(
-            lambda x: x.fiscal_position_id.l10n_ar_tax_ids.filtered(lambda x: x.tax_type == "perception")
-            and x.state not in ["cancel", "sale"]
-        ):
-            fp_tax_groups = rec.fiscal_position_id.l10n_ar_tax_ids.filtered(
-                lambda x: x.tax_type == "perception"
-            ).mapped("default_tax_id.tax_group_id")
-            date = fields.Date.to_date(fields.Datetime.context_timestamp(rec, rec.date_order))
-            new_taxes = rec.fiscal_position_id._l10n_ar_add_taxes(rec.partner_id, rec.company_id, date, "perception")
-            for line in rec.order_line:
-                to_unlink = line.tax_id.filtered(lambda x: x.tax_group_id in fp_tax_groups)
-                if to_unlink._origin != new_taxes:
-                    line.tax_id = [(3, tax.id) for tax in to_unlink] + [
-                        (4, tax.id) for tax in new_taxes if tax not in line.tax_id
-                    ]
+        if self.env.company.country_code == 'AR':
+            for rec in self.filtered(
+                lambda x: x.fiscal_position_id.l10n_ar_tax_ids.filtered(lambda x: x.tax_type == "perception")
+                and x.state not in ["cancel", "sale"]
+            ):
+                fp_tax_groups = rec.fiscal_position_id.l10n_ar_tax_ids.filtered(
+                    lambda x: x.tax_type == "perception"
+                ).mapped("default_tax_id.tax_group_id")
+                date = fields.Date.to_date(fields.Datetime.context_timestamp(rec, rec.date_order))
+                new_taxes = rec.fiscal_position_id._l10n_ar_add_taxes(rec.partner_id, rec.company_id, date, "perception")
+                for line in rec.order_line:
+                    to_unlink = line.tax_id.filtered(lambda x: x.tax_group_id in fp_tax_groups)
+                    if to_unlink._origin != new_taxes:
+                        line.tax_id = [(3, tax.id) for tax in to_unlink] + [
+                            (4, tax.id) for tax in new_taxes if tax not in line.tax_id
+                        ]
 
     def copy(self, default=None):
         """Re computamos las percepciones al duplicar una venta porque puede ser que la orden venga de otro periodo
