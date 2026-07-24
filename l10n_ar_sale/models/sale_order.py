@@ -58,6 +58,40 @@ class SaleOrder(models.Model):
             return "l10n_ar_sale.report_saleorder_document"
         return report_xml_id
 
+    def _prepare_invoice(self):
+        res = super()._prepare_invoice()
+        return self._l10n_ar_set_expo_journal(res)
+
+    def _l10n_ar_set_expo_journal(self, invoice_vals):
+        """Switch to an export journal when the partner requires export document types.
+
+        Mirrors _onchange_partner_journal (l10n_ar) which only fires in the UI;
+        called from _prepare_invoice so it also applies when invoicing from a sale order.
+        """
+        if self.company_id.account_fiscal_country_id.code != "AR":
+            return invoice_vals
+        partner = self.partner_invoice_id.commercial_partner_id
+        res_code = partner.l10n_ar_afip_responsibility_type_id.code
+        expo_systems = ["FEERCEL", "FEEWS", "FEERCELP"]
+        if res_code not in ["8", "9", "10"]:
+            return invoice_vals
+        current_journal = (
+            self.env["account.journal"].browse(invoice_vals["journal_id"]) if invoice_vals.get("journal_id") else None
+        )
+        if not current_journal or current_journal.l10n_ar_afip_pos_system not in expo_systems:
+            expo_journal = self.env["account.journal"].search(
+                [
+                    *self.env["account.journal"]._check_company_domain(self.company_id),
+                    ("l10n_latam_use_documents", "=", True),
+                    ("type", "=", "sale"),
+                    ("l10n_ar_afip_pos_system", "in", expo_systems),
+                ],
+                limit=1,
+            )
+            if expo_journal:
+                invoice_vals["journal_id"] = expo_journal.id
+        return invoice_vals
+
     def _create_invoices(self, grouped=False, final=False, date=None):
         """Por alguna razon cuando voy a crear la factura a traves de una devolucion, no me esta permitiendo crearla
         y validarla porque resulta el campo tipo de documento esta quedando vacio. Este campo se llena y computa
@@ -94,15 +128,20 @@ class SaleOrder(models.Model):
         )
         return True if module_installed else False
 
-    @api.onchange("date_order")
+    @api.onchange("date_order", "commercial_partner_id")
     def _l10n_ar_recompute_fiscal_position_taxes(self):
-        """Recalculamos las percepciones si cambiamos la fecha de la orden de venta. Para ello nos basamos en los
-        impuestos de la posicion fiscal, buscamos si hay impuestos existentes para los tax groups involucrados y los
-        reemplazamos por los nuevos impuestos.
+        """Recalculamos las percepciones si cambiamos la fecha de la orden de venta o el commercial partner.
+                Para ello nos basamos en los impuestos de la posicion fiscal, buscamos si hay impuestos existentes para los tax groups involucrados y los
+                reemplazamos por los nuevos impuestos.
+                NO lo hacemos para el cambio de fiscal_position_id porque el onchange de fiscal_position_id implementado en sale_ux ya recomputa todos los taxes
+                NOTA: en facturas no tenemos approach exactamente igual ya que en facturas es opcional el auto update a través del módulo
+        account_invoice_fiscal_position_update
         """
         for rec in self.filtered(
-            lambda x: x.fiscal_position_id.l10n_ar_tax_ids.filtered(lambda x: x.tax_type == "perception")
-            and x.state not in ["cancel", "sale"]
+            lambda x: (
+                x.fiscal_position_id.l10n_ar_tax_ids.filtered(lambda x: x.tax_type == "perception")
+                and x.state not in ["cancel", "sale"]
+            )
         ):
             fp_tax_groups = rec.fiscal_position_id.l10n_ar_tax_ids.filtered(
                 lambda x: x.tax_type == "perception"
@@ -112,9 +151,19 @@ class SaleOrder(models.Model):
             for line in rec.order_line:
                 to_unlink = line.tax_id.filtered(lambda x: x.tax_group_id in fp_tax_groups)
                 if to_unlink._origin != new_taxes:
-                    line.tax_id = [(3, tax.id) for tax in to_unlink] + [
-                        (4, tax.id) for tax in new_taxes if tax not in line.tax_id
-                    ]
+                    line.tax_id = (line.tax_id - to_unlink) | new_taxes
+
+    def _create_delivery_line(self, carrier, price_unit):
+        """Al agregar el envío, el módulo delivery solo aplica map_tax() de la posición fiscal,
+        que no incluye las percepciones argentinas (almacenadas en l10n_ar_tax_ids).
+        Luego de crear la línea de envío, agregamos las percepciones correspondientes."""
+        line = super()._create_delivery_line(carrier, price_unit)
+        if self.fiscal_position_id.l10n_ar_tax_ids.filtered(lambda x: x.tax_type == "perception"):
+            date = fields.Date.to_date(fields.Datetime.context_timestamp(self, self.date_order))
+            new_taxes = self.fiscal_position_id._l10n_ar_add_taxes(self.partner_id, self.company_id, date, "perception")
+            if new_taxes:
+                line.tax_id = line.tax_id | new_taxes
+        return line
 
     def copy(self, default=None):
         """Re computamos las percepciones al duplicar una venta porque puede ser que la orden venga de otro periodo
