@@ -15,6 +15,10 @@ class SaleOrder(models.Model):
     vat_discriminated = fields.Boolean(
         compute="_compute_vat_discriminated",
     )
+    # Related used to show/hide AR-specific fields in views (multi-company gating)
+    l10n_ar_company_requires_vat = fields.Boolean(
+        related="company_id.l10n_ar_company_requires_vat",
+    )
 
     @api.depends(
         "partner_id.l10n_ar_afip_responsibility_type_id",
@@ -37,7 +41,8 @@ class SaleOrder(models.Model):
         if not report_or_portal_view:
             return
 
-        for order in self.filtered(lambda x: not x.vat_discriminated):
+        # Multi-company gating: only adjust totals of Argentinean companies
+        for order in self.filtered(lambda x: x.company_id.country_code == "AR" and not x.vat_discriminated):
             tax_groups = order.order_line.mapped("tax_ids.tax_group_id")
             if not tax_groups:
                 continue
@@ -46,6 +51,13 @@ class SaleOrder(models.Model):
             # TODO revisar si es discriminar / no discrminar
             updated_tax_group_vals = list(filter(lambda x: x.get("id") not in to_remove_ids, tax_group_vals))
             order.tax_totals["subtotals"][0]["tax_groups"] = updated_tax_group_vals
+
+    def _get_name_tax_totals_view(self):
+        """Select the AR totals template only for Argentinean sale orders."""
+        self.ensure_one()
+        if self.company_id.country_code == "AR":
+            return "l10n_ar_sale.document_tax_totals"
+        return super()._get_name_tax_totals_view()
 
     def _get_name_sale_report(self, report_xml_id):
         """Method similar to the '_get_name_invoice_report' of l10n_latam_invoice_document
@@ -139,7 +151,8 @@ class SaleOrder(models.Model):
         """
         for rec in self.filtered(
             lambda x: (
-                x.fiscal_position_id.l10n_ar_tax_ids.filtered(lambda x: x.tax_type == "perception")
+                x.company_id.country_code == "AR"
+                and x.fiscal_position_id.l10n_ar_tax_ids.filtered(lambda x: x.tax_type == "perception")
                 and x.state not in ["cancel", "sale"]
             )
         ):
@@ -158,11 +171,13 @@ class SaleOrder(models.Model):
         que no incluye las percepciones argentinas (almacenadas en l10n_ar_tax_ids).
         Luego de crear la línea de envío, agregamos las percepciones correspondientes."""
         line = super()._create_delivery_line(carrier, price_unit)
-        if self.fiscal_position_id.l10n_ar_tax_ids.filtered(lambda x: x.tax_type == "perception"):
+        if self.company_id.country_code == "AR" and self.fiscal_position_id.l10n_ar_tax_ids.filtered(
+            lambda x: x.tax_type == "perception"
+        ):
             date = fields.Date.to_date(fields.Datetime.context_timestamp(self, self.date_order))
             new_taxes = self.fiscal_position_id._l10n_ar_add_taxes(self.partner_id, self.company_id, date, "perception")
             if new_taxes:
-                line.tax_id = line.tax_id | new_taxes
+                line.tax_ids |= new_taxes
         return line
 
     def copy(self, default=None):
