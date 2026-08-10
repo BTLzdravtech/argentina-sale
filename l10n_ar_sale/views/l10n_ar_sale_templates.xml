@@ -12,13 +12,11 @@
             <attribute name="t-out">', '.join(map(lambda x: (x.invoice_label or x.name), line.report_tax_id))</attribute>
         </xpath>
 
-
-        <!-- use column vat instead of taxes and only if vat discriminated.
-             Multi-company: never replace shared core nodes. The core Taxes column
-             stays untouched for non-AR companies; it is hidden only for Argentinean
-             companies, where the custom "% VAT" column is shown instead when the
-             order discriminates VAT. -->
-
+        <!--
+            Keep shared Odoo nodes intact. Non-AR companies keep the standard Taxes
+            column; AR orders replace its display with the custom % VAT column only
+            when VAT is discriminated.
+        -->
         <xpath expr="//th[@id='taxes_header']" position="attributes">
             <attribute name="t-if">display_taxes and sale_order.company_id.country_code != 'AR'</attribute>
         </xpath>
@@ -26,17 +24,38 @@
             <th t-if="sale_order.company_id.country_code == 'AR' and sale_order.vat_discriminated" t-attf-class="text-end {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}" id="l10n_ar_taxes_header"><span>% VAT</span></th>
         </xpath>
 
-        <!-- use column vat instead of taxes and only list vat taxes -->
+        <!-- Product rows: hide the core tax cell only for AR and add the VAT cell. -->
         <xpath expr="//td[@name='td_product_taxes']" position="attributes">
-            <attribute name="t-if">display_taxes and sale_order.company_id.country_code != 'AR'</attribute>
-        </xpath>
-        <xpath expr="//td[@name='td_combo_taxes']" position="attributes">
             <attribute name="t-if">display_taxes and sale_order.company_id.country_code != 'AR'</attribute>
         </xpath>
         <xpath expr="//td[@name='td_product_taxes']" position="after">
             <td t-if="sale_order.company_id.country_code == 'AR' and sale_order.vat_discriminated" t-attf-class="text-end {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}" id="l10n_ar_taxes">
                 <span t-out="', '.join(map(lambda x: (x.invoice_label or x.name), line.tax_ids.filtered(lambda x: x.tax_group_id.l10n_ar_vat_afip_code)))"/>
             </td>
+        </xpath>
+
+        <!--
+            Combo and collapsed-section rows do not expose tax records in the same
+            shape as ordinary product rows. Add an AR-only placeholder cell so their
+            subtotal stays aligned with the % VAT header without displaying
+            perceptions as VAT.
+        -->
+        <xpath expr="//td[@name='td_combo_taxes']" position="attributes">
+            <attribute name="t-if">display_taxes and sale_order.company_id.country_code != 'AR'</attribute>
+        </xpath>
+        <xpath expr="//td[@name='td_combo_taxes']" position="after">
+            <td t-if="sale_order.company_id.country_code == 'AR' and sale_order.vat_discriminated" t-attf-class="text-end {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}" name="td_l10n_ar_combo_taxes"/>
+        </xpath>
+        <xpath expr="//td[@name='td_section_group_taxes']" position="attributes">
+            <attribute name="t-if">display_taxes and sale_order.company_id.country_code != 'AR'</attribute>
+        </xpath>
+        <xpath expr="//td[@name='td_section_group_taxes']" position="after">
+            <td t-if="sale_order.company_id.country_code == 'AR' and sale_order.vat_discriminated" t-attf-class="text-end {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}" name="td_l10n_ar_section_group_taxes"/>
+        </xpath>
+
+        <!-- Section headers must span the columns actually rendered above. -->
+        <xpath expr="//t[@t-set='section_name_colspan']" position="attributes">
+            <attribute name="t-value">3 + (1 if display_discount else 0) + (1 if display_taxes and (sale_order.company_id.country_code != 'AR' or sale_order.vat_discriminated) else 0)</attribute>
         </xpath>
 
     </template>

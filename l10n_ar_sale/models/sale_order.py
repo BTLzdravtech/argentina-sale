@@ -52,6 +52,13 @@ class SaleOrder(models.Model):
             updated_tax_group_vals = list(filter(lambda x: x.get("id") not in to_remove_ids, tax_group_vals))
             order.tax_totals["subtotals"][0]["tax_groups"] = updated_tax_group_vals
 
+    def _get_name_tax_totals_view(self):
+        """Select the AR totals template only for Argentinean sale orders."""
+        self.ensure_one()
+        if self.company_id.country_code == "AR":
+            return "l10n_ar_sale.document_tax_totals"
+        return super()._get_name_tax_totals_view()
+
     def _get_name_sale_report(self, report_xml_id):
         """Method similar to the '_get_name_invoice_report' of l10n_latam_invoice_document
         Basically it allows different localizations to define it's own report
@@ -170,7 +177,7 @@ class SaleOrder(models.Model):
             date = fields.Date.to_date(fields.Datetime.context_timestamp(self, self.date_order))
             new_taxes = self.fiscal_position_id._l10n_ar_add_taxes(self.partner_id, self.company_id, date, "perception")
             if new_taxes:
-                line.tax_id = line.tax_id | new_taxes
+                line.tax_ids |= new_taxes
         return line
 
     def copy(self, default=None):

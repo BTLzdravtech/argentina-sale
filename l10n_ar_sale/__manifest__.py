@@ -1,6 +1,6 @@
 {
     "name": "Argentinian Sale Total Fields",
-    "version": "19.0.1.5.1",
+    "version": "19.0.1.5.2",
     "category": "Localization/Argentina",
     "sequence": 14,
     "author": "ADHOC SA",
