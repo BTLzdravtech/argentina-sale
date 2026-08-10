@@ -13,17 +13,31 @@
         </xpath>
 
 
-        <!-- use column vat instead of taxes and only if vat discriminated -->
+        <!-- use column vat instead of taxes and only if vat discriminated.
+             Multi-company: never replace shared core nodes. The core Taxes column
+             stays untouched for non-AR companies; it is hidden only for Argentinean
+             companies, where the custom "% VAT" column is shown instead when the
+             order discriminates VAT. -->
 
-        <th t-attf-class="text-end {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}" position="replace">
-            <th id="taxes_header" t-if="sale_order.vat_discriminated" t-attf-class="text-right {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}"><span>% VAT</span></th>
-        </th>
-        <!-- use column vat instead of taxes and only list vat taxes-->
-        <td t-attf-class="text-end {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}" position="replace">
-            <td id="taxes" t-if="sale_order.vat_discriminated" t-attf-class="text-right {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}">
+        <xpath expr="//th[@id='taxes_header']" position="attributes">
+            <attribute name="t-if">display_taxes and sale_order.company_id.country_code != 'AR'</attribute>
+        </xpath>
+        <xpath expr="//th[@id='taxes_header']" position="after">
+            <th t-if="sale_order.company_id.country_code == 'AR' and sale_order.vat_discriminated" t-attf-class="text-end {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}" id="l10n_ar_taxes_header"><span>% VAT</span></th>
+        </xpath>
+
+        <!-- use column vat instead of taxes and only list vat taxes -->
+        <xpath expr="//td[@name='td_product_taxes']" position="attributes">
+            <attribute name="t-if">display_taxes and sale_order.company_id.country_code != 'AR'</attribute>
+        </xpath>
+        <xpath expr="//td[@name='td_combo_taxes']" position="attributes">
+            <attribute name="t-if">display_taxes and sale_order.company_id.country_code != 'AR'</attribute>
+        </xpath>
+        <xpath expr="//td[@name='td_product_taxes']" position="after">
+            <td t-if="sale_order.company_id.country_code == 'AR' and sale_order.vat_discriminated" t-attf-class="text-end {{ 'd-none d-md-table-cell' if report_type == 'html' else '' }}" id="l10n_ar_taxes">
                 <span t-out="', '.join(map(lambda x: (x.invoice_label or x.name), line.tax_ids.filtered(lambda x: x.tax_group_id.l10n_ar_vat_afip_code)))"/>
             </td>
-        </td>
+        </xpath>
 
     </template>
 
