@@ -168,9 +168,12 @@ class SaleOrderLine(models.Model):
         """Agregado de taxes de modulo l10n_ar_tax segun fiscal position"""
         super()._compute_tax_ids()
 
-        for rec in self.with_context(tz="America/Argentina/Buenos_Aires").filtered(
-            "order_id.fiscal_position_id.l10n_ar_tax_ids"
-        ):
+        # Multi-company gating: only lines of Argentinean companies whose fiscal
+        # position has AR perception taxes configured
+        ar_lines = self.filtered(
+            lambda rec: rec.company_id.country_code == "AR" and rec.order_id.fiscal_position_id.l10n_ar_tax_ids
+        )
+        for rec in ar_lines.with_context(tz="America/Argentina/Buenos_Aires"):
             date = fields.Date.to_date(fields.Datetime.context_timestamp(rec, rec.order_id.date_order))
             rec.tax_ids += rec.order_id.fiscal_position_id._l10n_ar_add_taxes(
                 rec.order_partner_id, rec.company_id, date, "perception"

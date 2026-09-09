@@ -6,7 +6,8 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
             <group name="sale_info">
-                <field name="vat_discriminated"/>
+                <field name="l10n_ar_company_requires_vat" invisible="1"/>
+                <field name="vat_discriminated" invisible="not l10n_ar_company_requires_vat"/>
             </group>
             <xpath expr="//field[@name='order_line']/list//field[@name='tax_ids']" position="after">
                 <field name="price_unit_with_tax" groups="l10n_ar_sale.sale_price_unit_with_tax" widget="monetary"/>
