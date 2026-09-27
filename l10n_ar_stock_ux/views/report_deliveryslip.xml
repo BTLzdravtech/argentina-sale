@@ -12,11 +12,6 @@
     </record>
 
     <template id="report_deliveryslip" inherit_id="stock.report_deliveryslip">
-        <t t-foreach="docs" position="replace">
-            <t t-foreach="l10n_ar_copies_list" t-as="copy_type">
-                <t>$0</t>
-            </t>
-        </t>
         <t t-call="stock.report_delivery_document" position="attributes">
             <attribute name="t-call">#{ o._get_name_delivery_report('stock.report_delivery_document') }</attribute>
         </t>
@@ -25,6 +20,11 @@
     <!-- we force priority greater than 20 so that it dont break inheritance with delivery view -->
     <!-- creamos un reporte distinto al de odoo (l10n_ar_stock.report_delivery_document) porque queremos mantener la usablidad que veníamos teniendo para reducir fricción. Re-evaluaremos en próximas versiones -->
     <template id="report_delivery_document" priority="20" inherit_id="stock.report_delivery_document" primary="True">
+        <xpath expr="/t" position="replace">
+            <t t-foreach="l10n_ar_copies_list" t-as="copy_type">
+                <t>$0</t>
+            </t>
+        </xpath>
 
         <!-- custom header and footer -->
         <t t-set="o" position="after">
