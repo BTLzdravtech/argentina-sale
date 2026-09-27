@@ -60,17 +60,7 @@ class ArbaCotWizard(models.TransientModel):
 
     def confirm(self):
         self.ensure_one()
-        ctx = self.env.context or {}
-        pickings = self.env["stock.picking"]
-
-        # Soporta acción desde remitos individuales o múltiples
-        if ctx.get("active_model") == "stock.picking":
-            picking_ids = ctx.get("active_ids", [])
-            pickings = self.env["stock.picking"].browse(picking_ids)
-        else:
-            # Fallback para compatibilidad
-            picking_ids = ctx.get("active_ids", [])
-            pickings = self.env["stock.picking"].browse(picking_ids)
+        pickings = self.env["stock.picking"].browse(self.env.context.get("active_ids", []))
 
         for pick in pickings:
             pick._arba_send_picking(
