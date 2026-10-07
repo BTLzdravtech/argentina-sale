@@ -44,43 +44,23 @@ class ArbaCotWizard(models.TransientModel):
     def _constrain_check_format_patente(self):
         formato_antiguo = r"^[A-Z]{2}\d{3}[A-Z]{2}$"  # LLNNNLL
         formato_nuevo = r"^[A-Z]{3}\d{3}$"  # LLLNNN
-        patente_vehiculo_valida = patente_acoplado_valida = False
+        error = []
 
-        if not self.patente_vehiculo and not self.patente_acoplado:
-            return True
-
-        if self.patente_vehiculo and (
+        if self.patente_vehiculo and not (
             re.match(formato_antiguo, self.patente_vehiculo.upper()) or re.match(formato_nuevo, self.patente_vehiculo)
         ):
-            patente_vehiculo_valida = True
-
-        if self.patente_acoplado:
-            if bool(re.match(formato_antiguo, self.patente_acoplado.upper())) or bool(
-                re.match(formato_nuevo, self.patente_acoplado)
-            ):
-                patente_acoplado_valida = True
-
-        error = []
-        if not patente_acoplado_valida:
-            error.append("Patente Acoplado")
-        if not patente_vehiculo_valida:
             error.append("Patente Vehiculo")
+
+        if self.patente_acoplado and not (
+            re.match(formato_antiguo, self.patente_acoplado.upper()) or re.match(formato_nuevo, self.patente_acoplado)
+        ):
+            error.append("Patente Acoplado")
         if error:
             raise ValidationError(self.env._("Invalid license plate format (%s)", ", ".join(error)))
 
     def confirm(self):
         self.ensure_one()
-        ctx = self.env.context or {}
-        pickings = self.env["stock.picking"]
-
-        # Soporta acción desde remitos individuales o múltiples
-        if ctx.get("active_model") == "stock.picking":
-            picking_ids = ctx.get("active_ids", [])
-            pickings = self.env["stock.picking"].browse(picking_ids)
-        else:
-            # Fallback para compatibilidad
-            picking_ids = ctx.get("active_ids", [])
-            pickings = self.env["stock.picking"].browse(picking_ids)
+        pickings = self.env["stock.picking"].browse(self.env.context.get("active_ids", []))
 
         for pick in pickings:
             pick._arba_send_picking(
