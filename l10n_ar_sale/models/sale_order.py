@@ -104,9 +104,13 @@ class SaleOrder(models.Model):
         Para solventar decimos si tenemos facturas que usan documentos y que no tienen un tipo de documento, intentamos
         computarlo y asignarlo, esto aplica para cuando generamos una factura desde una orden de venta o suscripcion"""
         # the invoice button is hidden by invoice_status, a condition only the browser evaluates:
-        # a form left open keeps showing it and invoices again an order that has nothing left
-        nothing_to_invoice = self.filtered(lambda order: order.invoice_status not in ("to invoice", "upselling"))
-        if nothing_to_invoice:
+        # a form left open keeps showing it and invoices again an order that has nothing left.
+        # "no" is also the fallback status, so it only blocks when there are no invoiceable lines
+        nothing_to_invoice = self.filtered(
+            lambda order: order.invoice_status == "invoiced"
+            or (order.invoice_status == "no" and not order._get_invoiceable_lines(final))
+        )
+        if nothing_to_invoice and self.env.context.get("raise_if_nothing_to_invoice", True):
             raise UserError(
                 self.env._(
                     "There is nothing left to invoice on: %s. Reload the order before invoicing.",
@@ -161,8 +165,10 @@ class SaleOrder(models.Model):
             new_taxes = rec.fiscal_position_id._l10n_ar_add_taxes(rec.partner_id, rec.company_id, date, "perception")
             for line in rec.order_line:
                 to_unlink = line.tax_ids.filtered(lambda x: x.tax_group_id in fp_tax_groups)
-                if to_unlink._origin != new_taxes:
-                    line.tax_ids = (line.tax_ids - to_unlink) | new_taxes
+                # sections and notes only lose the perceptions they may still carry
+                target_taxes = self.env["account.tax"] if line.display_type else new_taxes
+                if to_unlink._origin != target_taxes:
+                    line.tax_ids = (line.tax_ids - to_unlink) | target_taxes
 
     def _create_delivery_line(self, carrier, price_unit):
         """Al agregar el envío, el módulo delivery solo aplica map_tax() de la posición fiscal,
